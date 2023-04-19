@@ -53,9 +53,6 @@ spec:
     app: nginx
 ```
 
-### Pushing an Image to Oracle Cloud Infrastructure Registry
-https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.html
-
 ### Requesting SR-IOV virtual functions
 
 Each GPU node has 16 virtual functions (VF). When requesting VFs, use the `k8s.v1.cni.cncf.io/networks: sriov-net` annotation, and request `nvidia.com/rdma_sriov` in your container spec.
@@ -89,3 +86,10 @@ spec:
       ls -l /dev/infiniband /sys/class/net
       sleep 1000000
  ```
+
+
+### Pushing an Image to Oracle Cloud Infrastructure Registry
+https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.html
+
+### Pulling an Image from Oracle Cloud Infrastructure Registry
+https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-and-registry/index.html
