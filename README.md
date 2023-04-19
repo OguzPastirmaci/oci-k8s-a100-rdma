@@ -87,6 +87,26 @@ spec:
       sleep 1000000
  ```
 
+### Requesting GPUs
+Each GPU node has 8 x A100 40 GB GPUs. When requesting GPUs, use `nvidia.com/gpu` in your pod spec.
+
+Example:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-version-check
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: nvidia-version-check
+    image: nvidia/cuda:11.7.1-base-ubuntu20.04
+    command: ["nvidia-smi"]
+    resources:
+      limits:
+         nvidia.com/gpu: "1"
+```
 
 ### Pushing an Image to Oracle Cloud Infrastructure Registry
 https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.html
