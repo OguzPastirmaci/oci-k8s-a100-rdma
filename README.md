@@ -96,7 +96,7 @@ https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.ht
 
 ### Running ib_write_bw test between pods using VFs
 
-Deploy the following pods
+Deploy the following pods:
 
 ```yaml
 apiVersion: v1
@@ -228,4 +228,15 @@ You should see a result similar to below:
  #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
  65536      1101500          0.00               96.25  		   0.183585
 ---------------------------------------------------------------------------------------
+```
+
+### Parameters to use when using NCCL as the backend
+When using NCCL as the backend in your jobs, please make sure you use the following parameters for optimal performance:
+
+```
+NCCL_IB_HCA=mlx5
+NCCL_IB_GID_INDEX=3
+NCCL_IB_QPS_PER_CONNECTION=4
+NCCL_IB_TC=41
+NCCL_IB_SL=0
 ```
