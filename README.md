@@ -193,6 +193,15 @@ kubectl exec -it rdma-test-pod-2 -- bash
 
 In `rdma-test-pod-1`, first get the IP address of the net1 interface (net1 is the VF interface) by running `ip -f inet addr show net1`. You will see a 192.168.0.x IP.
 
+```
+ip -f inet addr show net1
+
+36: net1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 4220 qdisc mq state UP group default qlen 20000
+    altname enp195s0f0v0
+    inet 192.168.0.1/16 brd 192.168.255.255 scope global net1
+       valid_lft forever preferred_lft forever
+```
+
 Then run `ibdev2netdev` to get the interface name:
 
 ```
