@@ -94,93 +94,138 @@ https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.ht
 ### Pulling Images from Registry during Deployment
 [https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-and-registry/index.html](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengpullingimagesfromocir.htm)
 
-### Running NCCL test 
+### Running ib_write_bw test between pods using VFs
+
+Deploy the following pods
 
 ```yaml
-apiVersion: kubeflow.org/v2beta1
-kind: MPIJob
+apiVersion: v1
+kind: Pod
 metadata:
-  name: nccl-test-a100
+  name: rdma-test-pod-1
+  annotations:
+    k8s.v1.cni.cncf.io/networks: sriov-net
 spec:
-  slotsPerWorker: 8
-  runPolicy:
-    cleanPodPolicy: Running
-  mpiReplicaSpecs:
-    Launcher:
-      replicas: 1
-      template:
-          spec:
-            initContainers:
-            - name: node-ordering-by-rack
-              image: oguzpastirmaci/node-ordering-by-rack:init-mpijob-v1
-              volumeMounts:
-              - name: node-ordering-by-rack
-                mountPath: "/node-ordering-by-rack"
-              - name: mpi-job-config
-                mountPath: /etc/mpi
-              - name: ssh-auth
-                mountPath: /root/.ssh
-            volumes:
-            - name: node-ordering-by-rack
-              emptyDir: {}    
-            containers:
-            - image: oguzpastirmaci/nccl-tests:cuda
-              name: nccl-tests
-              volumeMounts:
-              - name: node-ordering-by-rack
-                mountPath: "/node-ordering-by-rack"
-              env:
-              - name: OMPI_ALLOW_RUN_AS_ROOT
-                value: "1"
-              - name: OMPI_ALLOW_RUN_AS_ROOT_CONFIRM
-                value: "1"           
-              #command: ['sleep', '86400']
-              command: ["/bin/bash", "-c"]
-              args: ["mpirun \
-                    --bind-to numa \
-                    --hostfile /node-ordering-by-rack/ordered_hostfile \
-                    --mca pml ob1 --mca btl tcp,self --mca btl_tcp_if_include eth0  --mca coll ^hcoll \
-                    -x HCOLL_ENABLE_MCAST_ALL=0 \
-                    -x coll_hcoll_enable=0 \
-                    -x NCCL_IB_HCA=mlx5 \
-                    -x NCCL_IB_GID_INDEX=3 \
-                    -x NCCL_IB_QPS_PER_CONNECTION=4 \
-                    -x NCCL_IB_TC=41 \
-                    -x NCCL_IB_SL=0 \
-                    /opt/nccl_tests/build/all_reduce_perf -b1G -e10G -i$((1024*1024*1024*9)) -g 1
-                    "]
+  restartPolicy: OnFailure
+  containers:
+  - image: oguzpastirmaci/mofed-perftest:5.4-3.6.8.1-ubuntu20.04-amd64
+    name: mofed-test-ctr
+    securityContext:
+      capabilities:
+        add: [ "IPC_LOCK" ]
+    resources: 
+      requests:
+        nvidia.com/rdma_sriov: 1
+      limits:
+        nvidia.com/rdma_sriov: 1
+    command:
+    - sh
+    - -c
+    - |
+      ls -l /dev/infiniband /sys/class/net
+      sleep 1000000
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rdma-test-pod-2
+  annotations:
+    k8s.v1.cni.cncf.io/networks: sriov-net
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - image: oguzpastirmaci/mofed-perftest:5.4-3.6.8.1-ubuntu20.04-amd64
+    name: mofed-test-ctr
+    securityContext:
+      capabilities:
+        add: [ "IPC_LOCK" ]
+    resources: 
+      requests:
+        nvidia.com/rdma_sriov: "1"
+      limits:
+        nvidia.com/rdma_sriov: "1"
+    command:
+    - sh
+    - -c
+    - |
+      ls -l /dev/infiniband /sys/class/net
+      sleep 1000000
+```
 
-              resources:
-                requests:
-                  cpu: 2
-                  memory: 128Mi
-    Worker:
-      replicas: 2
-      template:
-        metadata:
-          annotations:
-            k8s.v1.cni.cncf.io/networks: sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net, sriov-net
-        spec:
-          containers:
-          - image: oguzpastirmaci/nccl-tests:cuda
-            #securityContext:
-              #capabilities:
-                #add: [ "IPC_LOCK" ]
-            name: nccl
-            resources:
-              requests:
-                cpu: 100
-                memory: 1000Gi
-                nvidia.com/gpu: 8
-                nvidia.com/rdma_sriov: 16
-              limits:
-                nvidia.com/gpu: 8
-                nvidia.com/rdma_sriov: 16
-            volumeMounts:
-              - mountPath: /dev/shm
-                name: dshm
-          volumes:
-            - emptyDir:
-                medium: Memory
-              name: dshm                
+
+Wait until both pods are in Running state.
+
+```
+kubectl get pods -o wide
+
+NAME              READY   STATUS    RESTARTS   AGE   IP           NODE    NOMINATED NODE   READINESS GATES
+rdma-test-pod-1   1/1     Running   0          49m   10.0.0.125   gpu02   <none>           <none>
+rdma-test-pod-2   1/1     Running   0          49m   10.0.0.70    gpu01   <none>           <none>
+```
+
+After the pods are running, open two terminals and exec into the pods.
+
+```
+kubectl exec -it rdma-test-pod-1 -- bash
+
+kubectl exec -it rdma-test-pod-2 -- bash
+```
+
+Run a basic `ib_write_bw` test between pods. You can get the device/interface matching with the `ibdev2netdev` command.
+
+
+ibdev2netdev
+
+mlx5_19 port 1 ==> net1 (Up)
+
+
+In `rdma-test-pod-1`, first get the IP address of the net1 interface (net1 is the VF interface) by running `ip -f inet addr show net1`. You will see a 192.168.0.x IP.
+
+Then run `ibdev2netdev` to get the interface name:
+
+```
+ibdev2netdev
+
+mlx5_19 port 1 ==> net1 (Up)
+```
+
+Then use the interface name in the below command (e.g. mlx5_19):
+
+```
+ib_write_bw -d mlx5_19 -a -F
+```
+
+In `rdma-test-pod-2` run `ibdev2netdev` to get the interface name, and use the interface name again in the following command: 
+
+```
+ib_write_bw -F -d mlx5_3 <IP of net1 in rdma-test-pod-1> -D 10 --cpu_util --report_gbits
+```
+
+You should see a result similar to below:
+
+```
+************************************
+* Waiting for client to connect... *
+************************************
+---------------------------------------------------------------------------------------
+                    RDMA_Write BW Test
+ Dual-port       : OFF		Device         : mlx5_3
+ Number of qps   : 1		Transport type : IB
+ Connection type : RC		Using SRQ      : OFF
+ CQ Moderation   : 100
+ Mtu             : 4096[B]
+ Link type       : Ethernet
+ GID index       : 2
+ Max inline data : 0[B]
+ rdma_cm QPs	 : OFF
+ Data ex. method : Ethernet
+---------------------------------------------------------------------------------------
+ local address: LID 0000 QPN 0x10107 PSN 0xb5554 RKey 0x04ad6e VAddr 0x007f8389beb000
+ GID: 00:00:00:00:00:00:00:00:00:00:255:255:192:168:07:201
+ remote address: LID 0000 QPN 0x10107 PSN 0x92e7fa RKey 0x047c3b VAddr 0x007fd6f366c000
+ GID: 00:00:00:00:00:00:00:00:00:00:255:255:192:168:07:189
+---------------------------------------------------------------------------------------
+ #bytes     #iterations    BW peak[MB/sec]    BW average[MB/sec]   MsgRate[Mpps]
+ 65536      1101500          0.00               96.25  		   0.183585
+---------------------------------------------------------------------------------------
 ```
