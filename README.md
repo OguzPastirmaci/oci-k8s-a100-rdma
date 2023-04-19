@@ -191,14 +191,6 @@ kubectl exec -it rdma-test-pod-1 -- bash
 kubectl exec -it rdma-test-pod-2 -- bash
 ```
 
-Run a basic `ib_write_bw` test between pods. You can get the device/interface matching with the `ibdev2netdev` command.
-
-```
-ibdev2netdev
-
-mlx5_19 port 1 ==> net1 (Up)
-```
-
 In `rdma-test-pod-1`, first get the IP address of the net1 interface (net1 is the VF interface) by running `ip -f inet addr show net1`. You will see a 192.168.0.x IP.
 
 Then run `ibdev2netdev` to get the interface name:
