@@ -91,5 +91,5 @@ spec:
 ### Pushing an Image to Oracle Cloud Infrastructure Registry
 https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/registry/index.html
 
-### Pulling an Image from Oracle Cloud Infrastructure Registry
-https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-and-registry/index.html
+### Pulling Images from Registry during Deployment
+[https://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-and-registry/index.html](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengpullingimagesfromocir.htm)
