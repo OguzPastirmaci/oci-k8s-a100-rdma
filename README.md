@@ -1,11 +1,11 @@
 # oci-k8s-a100-rdma
 
-GPU worker nodes:
+#### GPU worker nodes:
 
-OS: Ubuntu 20.04
-GPU driver version: 515.86.01
-CUDA version: 11.7
-OFED driver version: 
+- OS: Ubuntu 20.04
+- GPU driver version: 515.86.01
+- CUDA version: 11.7
+- OFED driver version: 
 
 
 ### Provisioning PVCs on the OCI Block Volume Service
