@@ -219,7 +219,7 @@ ib_write_bw -d mlx5_19 -a -F
 In `rdma-test-pod-2` run `ibdev2netdev` to get the interface name, and use the interface name of `rdma-test-pod-2` and the IP of net1 of `rdma-test-pod-1`  in the following command: 
 
 ```
-ib_write_bw -F -d mlx5_3 <IP of net1 in rdma-test-pod-1> -D 10 --cpu_util --report_gbits
+ib_write_bw -F -d mlx5_33 <IP of net1 in rdma-test-pod-1> -D 10 --cpu_util --report_gbits
 ```
 
 You should see a result similar to below:
